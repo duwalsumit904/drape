@@ -43,6 +43,7 @@ jobs:
         run: alembic upgrade head
         env:
           DATABASE_URL: postgresql+asyncpg://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/drape_test
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
       - name: Run tests
         run: pytest tests/ -v --cov=app --cov-report=term-missing
