@@ -26,6 +26,16 @@ from app.models.user import User,Customer,Employee
 
 target_metadata = Base.metadata
 
+
+database_url = os.getenv("DATABASE_URL")
+
+if database_url:
+    # Alembic runs sync — replace asyncpg with psycopg2
+    database_url = database_url.replace("postgresql+asyncpg", "postgresql+psycopg2")
+    config.set_main_option("sqlalchemy.url", database_url)
+
+
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
