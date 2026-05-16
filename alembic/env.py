@@ -6,8 +6,18 @@ from sqlalchemy import pool
 import os
 from alembic import context
 
+
+
+
+from dotenv import load_dotenv
+
+
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
+
+
+load_dotenv()
 config = context.config
 
 # Interpret the config file for Python logging.
@@ -23,7 +33,9 @@ if config.config_file_name is not None:
 
 from app.core.database import Base
 from app.models.user import User,Customer,Employee
-
+from app.models.user import User, Customer, Employee
+from app.models.product import Category, Product, ProductVariant, ProductImage
+from app.models.order import Order, OrderItem
 target_metadata = Base.metadata
 
 

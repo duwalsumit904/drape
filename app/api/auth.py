@@ -1,11 +1,17 @@
 from fastapi import APIRouter, Depends, status
+from redis import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
+from app.core.redis_client import get_redis
 from app.schemas.user import CustomerRegister, TokenResponse
 from app.services import auth_service
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-
+from pydantic import BaseModel
 router = APIRouter()
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
+
 
 @router.post("/register",status_code=status.HTTP_201_CREATED)
 async def register_customer(
@@ -23,16 +29,21 @@ async def register_customer(
 @router.post("/login")
 async def login(
         form_data: OAuth2PasswordRequestForm = Depends(),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        redis: Redis = Depends(get_redis)
 
 ):
-    access_token,refresh_token = await auth_service.login_user(form_data.username,form_data.password,db)
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer"
-    }
+    return  await auth_service.login_user(
+        form_data.username,
+
+        form_data.password,
+        db,
+        redis
+
+
+    )
+
 
 
 
@@ -41,5 +52,27 @@ async def get_me(current_user = Depends(auth_service.get_current_user)):
     return {
         "user_id": current_user.id,
         "email": current_user.email,
-        "user_type": current_user.user_type
+        "user_type": current_user.user_type,
+
     }
+
+
+
+
+
+@router.post("/logout")
+async def logout(
+        data: RefreshTokenRequest,
+        redis: Redis = Depends(get_redis),
+        current_user = Depends(auth_service.get_current_user)
+
+
+):
+    return await auth_service.logout_user(data.refresh_token, redis)
+
+@router.post("/refresh")
+async def refresh_token(data: RefreshTokenRequest, redis:Redis = Depends(get_redis),db:AsyncSession=Depends(get_db)):
+    return await auth_service.refresh_access_token(
+        data.refresh_token,
+        redis,db
+    )
